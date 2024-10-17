@@ -1,0 +1,4 @@
+Diseño del modelo de datos
+
+subtipo y supertipo
+es una forma de modelizar situaciones en las que hay una entidad que tiene atributos comunes entre otras. Entonces se divide en padre (supertipo) e hijos (subtipos). Cada subtipo tendra atributos propios de esa entidad, y compartiran entre todos los hijos los atributos del padre.

@@ -1,0 +1,63 @@
+Diseño de base de datos
+conssite en diseñar el nivel conceptual/lógico de una base de datos, determinando las tablas, los atributos, las relaciones y la integridad.
+
+Claves candidatas: aquellas claves que pueden ser primarias. Tiene que cumplir con la propiedades de: 
+-unicidad: ningun valor de la tabla contiene dos registros distintos con el mismo valor de la clave
+-irreductibilidad: ningun subconjunto de la clave tiene la propiedad de unicidad.
+pueden ser simples o compuestas.
+
+Claves primarias: clave que identifica unívocamente a cada registro de una tabla.
+
+Claves alternativas: son aquellas candidatas que no llegaron a ser primarias.
+
+Claves foraneas: una clave foranea en una tabla es un conjunto de atributos de esa tabla tales que exista otra tabla con una clave primaria y cada valor de la clave foranea es igual al valor de la primaria en algun registro de la otra tabla. puede ser simple o compuesta
+
+Dependencia funcional:
+Dados dos subconjuntos de una tabla, se dice que el subconjunto X determina funcionalmente al subconjunto Y si o solo si cada valor de X esta relacionado con solo un valor de Y. Tambien se dice que Y depende funcionalmente de X. X es un determinante.
+En simbolos:	   X --> Y
+	Determinante --> Dependiente
+El determinante suele estar relacionado a los atributos claves, mientras que los dependientes a los atributos no claves.
+Son dependencias triviales las que determinan a un atributo del conjunto determinante. ejemplo: {A,B} --> {A}
+
+NORMALIZACION
+-Eliminar redundancias. No deberian existir
+-Evitar anomalias en las actualizaciones, inserciones, etc
+-Simplificar las reglas de integridad (las reglas de integridad estan en clase1)
+-crear un modelo que represente el mundo real
+
+1RA FORMA NORMAL:
+Se dice que una relacion esta en 1FN si todos sus dominios contienen valores atomicos, es decir, si en una tabla, cualquier registro contiene exactamente 1 solo valor para cada atributo (nada de arrays, ni eso).
+
+2DA FORMA NORMAL: 
+Se dice que una tabla esta en 2FN si y solo si esta en 1FN y ademas todos los atributos que no son clave, dependen completamente de la clave primaria. 
+
+3RA FORMA NORMAL:
+Se dice que una tabla esta en 3FN si y solo si esta en 2FN y todos los atributos que no son clave, NO DEPENDEN transitivamente de la clave primaria.
+Si Existe R(a,b) y R(b,c) -|-> R(a,c)
+
+FORMA NORMAL BOYCE/CODD:
+Una relacion esta en BoyceCoddFN si y solo si todo los determinantes son clave candidata. 
+Una R(a,b,c) se convierte en R(a,c) y R(c,b), siendo {c} el determinante que ahora es clave 
+
+4TA FORMA NORMAL:
+Una relacion esta en 4FN si y solo si la relacion esta en BoyceCoddFN y ademas no contiene dependencias multivaluadas. 
+Una dependencia multivaluada (DMV) se le dice a una relacion en la cual para un valor de A, hay muchos valores de B
+(REVISAR)
+
+5TA FORMA NORMAL:
+(REVISAR)
+
+DESNORMALIZACION:
+
+
+
+
+
+
+
+
+
+
+
+
+

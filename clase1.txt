@@ -1,0 +1,60 @@
+	Independencia Lógica: Inmunidad de las aplicaciones frente a cambios en las tablas de la aplicación. Ejemplo: Es cuando se puede eliminar un campo de una tabla y que el resto de las aplicaciones funcionen correctamente porque no hay ninguna otra tabla que haga referencia a ese campo eliminado. En cambio, si no tuviera independencia lógica, habría un fallo en las aplicaciones porque alguna tabla intentaría hacer referencia a un dato que no existe y eso fallaría. 
+
+	Independencia Física: Inmunidad de las aplicaciones frente a cambios en la representación física y acceso a los datos. Ejemplo: Se puede mover/migrar una base de datos de un disco a otro, o de un servidor a otro (representación física). Otro ejemplo: Que se borre el índice de una PK en una tabla, y luego se haga una consulta. En este caso la consulta va a funcionar igual porque hay independencia física (acceso a datos).
+
+En los sistemas de almacenamiento que no son bases de datos, suelen coincidir los registros lógicos y los físicos.
+
+	Transacciones: Es el conjunto de operaciones que deben ejecutarse todas, o ninguna. (Deben, o no, realizarse en su totalidad). Tienen 4 propiedades: ACID
+		A: Atomicidad: Por mas que haya muchas operaciones, se ejecutan todas las operaciones como si fueran una sola.
+		C: Consistencia: Una vez que se ejecuten todas las operaciones, la BD debe quedar valida, consistencte
+		I: Aislamientoo (Isolation): Ejecutar las operaciones como si la BD fuera una monousuario. 
+		D: Durabilidad: Una vez que todas las operaciones fueron realizadas, quedan persistidas, guardadas, grabadas, en al base de datos hasta que se quieran borrar de forma explícita.
+Ejemplo: 
+begin transaction
+	update ....
+	init .....		(estas son las operaciones que realiza en conjunto)
+	delete ....
+	update ...
+commit; (si todo está bien, entonces guardalo)
+if error
+	rollback;
+Es decir, un begin transaction puede terminar en un commit (se ejecuto todo bien) o en un rollback (hubo un error, entonces se vuelve todo atras y no se ejecuta nada).
+
+Arquitectura - ANSI-SPARC
+	Nivel fisico/interno: Es como esta almacenada la base de datos en el disco
+	Nivel logico/conceptual: Consiste en una BD con todos los objetos (tablas), modificarlas, manipularlas, consultarlas. 
+	Nivel externo: Los usuarios externos u otros usuarios, no pueden tener el permiso de acceder al nivel lógico/conceptual. PAra eso hay diferentes vistas para diferentes usuarios, en las cuales cada usuario va a poder ver distintas cosas, y de esa forma va a haber tablas o entidades que no podrán ver si no pertenecen a esa vista. 
+
+
+
+Modelo relacional
+Esta basado en 3 aspectos. 
+
+	Aspecto estructural: Las tablas tienen una estructura. (Tupla: fila) Tiene grado y cardinalidad. Los atributos poseen un dominio. 
+Propiedades: En una tabla no existen filas repetidas. Las filas no estan ordenadas. Los atributos (columnas) no estan ordenados. Los valorse de los atributos son atómicos (no peude haber mas de un valor para una fila en una columna)
+Clave foranea: Es un campo o conjunto de campos (clave foranea compuesta) que hace referencia a una clave primaria de otra tabla. Tiene restricciones, el valor que se ponga como FK en una tabla, debe SI o SI existir como PK en la tabla que le corresponde. En caso de no existir tal valor, se debe dejar nulo para que persista la validez de los datos. 
+Catalogo: Es un conjunto de tablas que ya viene incorporado en el motor de BD (se autogenera cada vez que se manipula la tabla como crearla, etc) , y almacena los datos de todos los objetos que estan en la BS, como una metadata, describiendo todos los objetos que estan en la BD. 
+El optimizador consume estas tablas para buscar la mejor manera de ejecutar las peticiones de un usuario, como las consultas. Ejemplo: Tengo la tabla de alumnos en una BD, y va a haber una "tabla del sistema" que crea el motor, donde va a aparecer la tabla de alumnos. Escribe las tablas que hay en la BD. Tambien va a haber otra tabla que diga las columnas de las tablas, con los tipos, etc. 
+
+	Aspecto de integridad: Hay 3 tipos de integridad
+Integridad de dominio: (Un dominio es un conjunto válido que valores que peude tomar un atributo) Se restringen los dominion definiendo los tipos de dato de los atributos, si puede ser nulo o no, y con chequeos de valores (que el campo solo pueda tener 3 valores), y convencion de nombres (no lo valida el motor)
+Integridad de entidades: Esta relacionada a las claves primarias.
+	Clave primaria: Es aquella clave (atributo) que identifica unívocamente a un registro de una tabla. Puede ser compuesta, significa que puede estar compuesta por mas de un campo.
+	Clave candidata: Son aque conjunto de campos que PODRÍAN ser clave primaria. Se elije solo una como clave primaria (o un conjunto como compuesta)
+Integridad referencial: Esta relacionada a las claves foráneas. 
+	Clave subrogada: Permite que si por algun motivo hay que modificar el valor de un campo que es FK de otras tablas, no haya que modificar todos lados. Al usar una clave subrogada, se modifica el campo pero no hay que alterar las referencias ya que la clave subrogada no cambia. 
+
+	Aspecto de operaciones: Las operaciones que se pueden realizar en una base de datos. Se cumple la propiedad de cierre o clausura, significa que el resultado de una oepracion sobre una tabla, es otra tabla. 
+
+
+
+
+
+
+
+
+
+
+
+
+

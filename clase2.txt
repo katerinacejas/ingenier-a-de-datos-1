@@ -1,0 +1,22 @@
+pdf Algebra Relacional clase 03
+
+algebra relacional es distinto a SQL. por ejemplo select y project son diferentes a como son en SQL. 
+
+join
+si se pone A chirimbolo B se da a entender que el join es por todos los atributos que existan en ambas tablas por igual. 
+si se pone A JOIN B, se debe aclarar mediante que atributos se hacce el apareo
+
+division: es a quien "provee" a todos los campos. en el ejemplo A%C el S3 no aparece en el resultado porque S3 no provee a P4, solo a P2, y tiene que proveer a ambos.
+
+propiedad cierre o clausura: cualquier operacion entre relaciones, da como resultado otra relacion
+
+ejercicio de combinacion de operaciones pagina 18:
+project(NombreS, NombreP) (
+	select (P) Ciudad='CABA'
+	join (S#)
+	select (SP) Cantidad>20 }
+	) join (P#) P
+
+operadores de totales: Si no se agrupa por un atributo, el resultado va a terminar siendo una relacion de 1x1 con solamente la columna AS definida y solo 1 fila.
+
+El resultado de una operacion entre relacion/relaciones, puede dar como resultado el vacio (agregar chirimbolo de vacio)
