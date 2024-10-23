@@ -1,4 +1,5 @@
 use uade
+use baseDeDatosDelCuatri
 
 -- EJERCICIO 1
 create table Personas(
@@ -106,26 +107,6 @@ group by det.producto_cod
 -- ejercicio 6
 
 
-
-
-
--- ejercicio 7
-select c1.cliente_num,
-	c1.cliente_ref as 'Referente',
-	c2.cliente_ref as 'Referente2',
-	c3.cliente_ref as 'Referente3'
-from clientes c1
-	left join clientes c2
-		on c1.cliente_ref = c2.cliente_num
-	left join clientes c3
-		on c2.cliente_ref = c3.cliente_num
-where c1.cliente_ref is not null
-
-
-
-
-
--- ejercicio 8
 create table tabla1(
 	columna1 int,
 	columna2 int,
@@ -158,3 +139,70 @@ union all
 select * from tabla2
 except
 select * from tabla1
+
+
+
+-- ejercicio 7
+select c1.cliente_num,
+	c1.cliente_ref as 'Referente',
+	c2.cliente_ref as 'Referente2',
+	c3.cliente_ref as 'Referente3'
+from clientes c1
+	left join clientes c2
+		on c1.cliente_ref = c2.cliente_num
+	left join clientes c3
+		on c2.cliente_ref = c3.cliente_num
+where c1.cliente_ref is not null
+
+
+
+
+
+-- ejercicio 8
+create table clubes(
+	codigo int primary key,
+	nombre varchar(30) not null,
+)
+
+create table jugadoras(
+	legajo int primary key,
+	codigoClub int references clubes(codigo),
+	nombre varchar(30) not null,
+	apellido varchar(30) not null,
+	dni int not null,
+	fechaDesde date not null,
+	fechaHasta date not null
+)
+
+insert into clubes (codigo, nombre) values (1, 'unClub')
+insert into clubes (codigo, nombre) values (2, 'otroClub')
+
+insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
+				values( 100,       1,      'kate', 'cejas', 12345,'2024-01-01','2024-12-31')
+
+select * from clubes
+select * from jugadoras
+delete from jugadoras
+
+-- insert para probar el trigger
+
+--este insert deberia fallar
+insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
+				values( 100,       2,      'kate', 'cejas', 12345,'2024-09-03','2024-12-31')
+
+--este insert ejecuta bien
+insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
+				values( 100,       2,      'kate', 'cejas', 12345,'2025-01-01','2025-12-25')
+
+go 
+
+create trigger evitarFichajeAlMismoTiempo
+on jugadoras
+instead of insert, update as
+	begin
+		if exists (select legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta
+				   from jugadoras 
+				   where legajo = (select legajo from inserted) and 
+						 codigoClub = (select legajo from inserted) and 
+				   )
+	end
