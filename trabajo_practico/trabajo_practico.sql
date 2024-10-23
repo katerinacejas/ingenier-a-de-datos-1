@@ -165,13 +165,14 @@ create table clubes(
 )
 
 create table jugadoras(
-	legajo int primary key,
-	codigoClub int references clubes(codigo),
+	legajo int not null,
+	codigoClub int references clubes(codigo) not null,
 	nombre varchar(30) not null,
 	apellido varchar(30) not null,
 	dni int not null,
 	fechaDesde date not null,
-	fechaHasta date not null
+	fechaHasta date not null,
+	primary key (legajo, fechaDesde, fechaHasta)
 )
 
 insert into clubes (codigo, nombre) values (1, 'unClub')
@@ -184,25 +185,69 @@ select * from clubes
 select * from jugadoras
 delete from jugadoras
 
+drop table jugadoras
+
 -- insert para probar el trigger
 
 --este insert deberia fallar
 insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
 				values( 100,       2,      'kate', 'cejas', 12345,'2024-09-03','2024-12-31')
 
---este insert ejecuta bien
+--estos insert ejecutan bien
 insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
 				values( 100,       2,      'kate', 'cejas', 12345,'2025-01-01','2025-12-25')
+insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
+				values( 101,       1,     'chispi', 'cejas',78949,'2025-01-01','2025-12-25')
+
 
 go 
 
 create trigger evitarFichajeAlMismoTiempo
 on jugadoras
-instead of insert, update as
+instead of insert as
 	begin
-		if exists (select legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta
-				   from jugadoras 
-				   where legajo = (select legajo from inserted) and 
-						 codigoClub = (select legajo from inserted) and 
-				   )
+		-- validar la existencia de la jugadora 
+		if exists (select top 1 legajo from jugadoras where legajo = (select legajo from inserted))
+			begin
+				-- se declara el cursor
+				declare cursorJugadoras cursor for
+					select legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta
+					from jugadoras
+					where legajo = (select legajo from inserted)
+
+				-- se declaran las variables que almacenaran cada iteracion del cursor
+				declare @legajo int, @codigoClub int, @nombre varchar(30), @apellido varchar(30), @dni int, @fechaDesde date, @fechaHasta date
+ 
+				--abrir cursor
+				OPEN cursorJugadoras
+
+				-- primera iteracion, guardo la primer fila en las variables
+				fetch cursorJugadoras into @legajo, @codigoClub, @nombre, @apellido, @dni, @fechaDesde, @fechaHasta
+
+				While (@@FETCH_STATUS=0) --mientras haya filas por leer de la misma jugadora
+					begin
+						-- validar que las fechas Desde y Hasta no esté ninguna de las dos dentro del periodo en la jugadora ya existente
+						if
+							((select fechaDesde from inserted) between @fechaDesde and @fechaHasta)
+							 or 
+							((select fechaHasta from inserted) between @fechaDesde and @fechaHasta)
+				
+							begin -- en caso de que los periodos no sean validos, se lanza error
+								print 'Nro. Error: ' + cast(error_number() as varchar);
+								print 'mensaje: ' + error_message();
+								print 'estado: ' + cast(error_state() as varchar);
+								throw 50000, 'Se intentó insertar a una jugadora en un periodo donde ya tiene un club asignado.', 1
+							end
+						-- busca la fila siguiente
+						fetch cursorJugadoras into @legajo, @codigoClub, @nombre, @apellido, @dni, @fechaDesde, @fechaHasta
+					end
+
+				--cerrar y liberar cursor
+				close cursorJugadoras
+				DEALLOCATE cursorJugadoras
+			end 
+
+		-- en caso de no existir la jugadora, o que los periodos sean válidos, inserto en la tabla
+		insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
+		select legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta from inserted
 	end
