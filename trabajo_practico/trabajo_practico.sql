@@ -50,6 +50,7 @@ delete from duplicados
 where nro_fila > 1
 
 
+
 -- Ejercicio 3
 select fab.provincia_cod, coalesce(sum(det.cantidad * det.precio_unit), 0) as total_comprado
 from fabricantes fab
@@ -67,14 +68,10 @@ create table numeros_secuenciales(
 	numero int null
 )
 
-insert numeros_secuenciales(numero) 
-values (1)
-insert numeros_secuenciales(numero) 
-values (2)
-insert numeros_secuenciales(numero) 
-values (3)
-insert numeros_secuenciales(numero) 
-values (8)
+insert numeros_secuenciales(numero) values (1)
+insert numeros_secuenciales(numero) values (2)
+insert numeros_secuenciales(numero) values (456)
+insert numeros_secuenciales(numero) values (8)
 
 select coalesce(min(numero + 1), 1) as primer_espacio_libre
 from numeros_secuenciales
@@ -120,26 +117,57 @@ create table tabla2(
 )
 
 insert tabla1 (columna1, columna2, columna3) values (1,2,3)
-insert tabla1 (columna1, columna2, columna3) values (1,2,3)
-insert tabla1 (columna1, columna2, columna3) values (1,2,3)
+insert tabla1 (columna1, columna2, columna3) values (4,5,6)
+insert tabla1 (columna1, columna2, columna3) values (7,8,9)
 
 insert tabla2 (columna1, columna2, columna3) values (1,2,3)
-insert tabla1 (columna1, columna2, columna3) values (1,2,3)
-insert tabla1 (columna1, columna2, columna3) values (1,2,3)
+insert tabla2 (columna1, columna2, columna3) values (4,5,6)
+insert tabla2 (columna1, columna2, columna3) values (7,8,9)
+
+insert tabla2 (columna1, columna2, columna3) values (8,8,9)
 
 delete from tabla1
 delete from tabla2
 
 select * from tabla1
-except
 select * from tabla2
 
-union all
+go
 
-select * from tabla2
-except
-select * from tabla1
+create procedure asegurarMismaEstructura as
+begin
+	-- valido que tengan la misma cantidad de registros
+	if (select count(*) from tabla1) != (select count(*) from tabla2)
+		begin
+			print 'Nro. Error: ' + cast(error_number() as varchar);
+			print 'mensaje: ' + error_message();
+			print 'estado: ' + cast(error_state() as varchar);
+			throw 50000, 'Las tablas tienen distinta cantidad de registros', 1
+		end
+	
+	-- en caso de que la cantidad de registros sea la misma, se valida que el resto sea exactamente igual.
+	-- se hace una validacion de la cantidad previo a esta validacion porque el except no distingue entre duplicados,
+	-- y si hay duplicados entonces podría variar la cantidad de registros por mas que los datos sean los mismos. 
 
+	declare @cantidad_registros_distintos int
+	select @cantidad_registros_distintos = count(*) from ( select * from tabla1 except select * from tabla2
+															union all
+															select * from tabla2 except select * from tabla1 ) as diferencias_entre_tablas
+	if @cantidad_registros_distintos > 0
+		begin
+			print 'Nro. Error: ' + cast(error_number() as varchar);
+			print 'mensaje: ' + error_message();
+			print 'estado: ' + cast(error_state() as varchar);
+			throw 50000, 'Las tablas no son exactamente iguales', 1
+		end
+
+	-- en caso de no haberse lanzado ningun eror: 
+	print 'Las tablas son exactamente iguales'
+end
+
+go
+
+exec asegurarMismaEstructura
 
 
 -- ejercicio 7
@@ -205,49 +233,49 @@ go
 create trigger evitarFichajeAlMismoTiempo
 on jugadoras
 instead of insert as
-	begin
-		-- validar la existencia de la jugadora 
-		if exists (select top 1 legajo from jugadoras where legajo = (select legajo from inserted))
-			begin
-				-- se declara el cursor
-				declare cursorJugadoras cursor for
-					select legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta
-					from jugadoras
-					where legajo = (select legajo from inserted)
+begin
+	-- validar la existencia de la jugadora 
+	if exists (select top 1 legajo from jugadoras where legajo = (select legajo from inserted))
+		begin
+			-- se declara el cursor
+			declare cursorJugadoras cursor for
+				select legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta
+				from jugadoras
+				where legajo = (select legajo from inserted)
 
-				-- se declaran las variables que almacenaran cada iteracion del cursor
-				declare @legajo int, @codigoClub int, @nombre varchar(30), @apellido varchar(30), @dni int, @fechaDesde date, @fechaHasta date
+			-- se declaran las variables que almacenaran cada iteracion del cursor
+			declare @legajo int, @codigoClub int, @nombre varchar(30), @apellido varchar(30), @dni int, @fechaDesde date, @fechaHasta date
  
-				--abrir cursor
-				OPEN cursorJugadoras
+			--abrir cursor
+			OPEN cursorJugadoras
 
-				-- primera iteracion, guardo la primer fila en las variables
-				fetch cursorJugadoras into @legajo, @codigoClub, @nombre, @apellido, @dni, @fechaDesde, @fechaHasta
+			-- primera iteracion, guardo la primer fila en las variables
+			fetch cursorJugadoras into @legajo, @codigoClub, @nombre, @apellido, @dni, @fechaDesde, @fechaHasta
 
-				While (@@FETCH_STATUS=0) --mientras haya filas por leer de la misma jugadora
-					begin
-						-- validar que las fechas Desde y Hasta no esté ninguna de las dos dentro del periodo en la jugadora ya existente
-						if
-							((select fechaDesde from inserted) between @fechaDesde and @fechaHasta)
-							 or 
-							((select fechaHasta from inserted) between @fechaDesde and @fechaHasta)
+			While (@@FETCH_STATUS=0) --mientras haya filas por leer de la misma jugadora
+				begin
+					-- validar que las fechas Desde y Hasta no esté ninguna de las dos dentro del periodo en la jugadora ya existente
+					if
+						((select fechaDesde from inserted) between @fechaDesde and @fechaHasta)
+							or 
+						((select fechaHasta from inserted) between @fechaDesde and @fechaHasta)
 				
-							begin -- en caso de que los periodos no sean validos, se lanza error
-								print 'Nro. Error: ' + cast(error_number() as varchar);
-								print 'mensaje: ' + error_message();
-								print 'estado: ' + cast(error_state() as varchar);
-								throw 50000, 'Se intentó insertar a una jugadora en un periodo donde ya tiene un club asignado.', 1
-							end
-						-- busca la fila siguiente
-						fetch cursorJugadoras into @legajo, @codigoClub, @nombre, @apellido, @dni, @fechaDesde, @fechaHasta
-					end
+						begin -- en caso de que los periodos no sean validos, se lanza error
+							print 'Nro. Error: ' + cast(error_number() as varchar);
+							print 'mensaje: ' + error_message();
+							print 'estado: ' + cast(error_state() as varchar);
+							throw 50000, 'Se intentó insertar a una jugadora en un periodo donde ya tiene un club asignado.', 1
+						end
+					-- busca la fila siguiente
+					fetch cursorJugadoras into @legajo, @codigoClub, @nombre, @apellido, @dni, @fechaDesde, @fechaHasta
+				end
 
-				--cerrar y liberar cursor
-				close cursorJugadoras
-				DEALLOCATE cursorJugadoras
-			end 
+			--cerrar y liberar cursor
+			close cursorJugadoras
+			DEALLOCATE cursorJugadoras
+		end 
 
-		-- en caso de no existir la jugadora, o que los periodos sean válidos, inserto en la tabla
-		insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
-		select legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta from inserted
-	end
+	-- en caso de no existir la jugadora, o que los periodos sean válidos, inserto en la tabla
+	insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
+	select legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta from inserted
+end
