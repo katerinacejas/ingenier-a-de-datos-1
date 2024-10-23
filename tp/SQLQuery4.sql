@@ -1,7 +1,6 @@
-use baseDeDatosDelCuatri
+use uade
 
 -- EJERCICIO 1
-
 create table Personas(
 	id int NOT NULL,
 	Nombre varchar(20),
@@ -39,65 +38,18 @@ where Id in
 
 
 -- Ejercicio 2
+with duplicados as (
+    select Id, 
+		   Nombre, 
+		   Apellido,
+           row_number() over (partition by Id order by Id) as nro_fila
+    from Personas
+)
+delete from duplicados
+where nro_fila > 1
 
-select row_number() over(partition by Id order by Id asc) as nro_fila,
-		Id, Nombre, Apellido
-	into #Personas
-	from Personas
-
-
-delete from Personas
-where (cast(Id as varchar(1))+Nombre+Apellido not in 
-		(select cast(nro_fila as varchar(1))+Nombre+Apellido
-		from #Personas))
-	 and
-	 (Id in (select Id
-	 from Personas
-	 group by Id 
-	 having count(Id) > 1))
-	 
-drop table #Personas
-
-
--- para pruebas
-select Id, Nombre, Apellido
-from Personas
-order by 1, 2
-
--- se declara el cursor
-declare borrarDuplicadosCursor cursor for
-	SELECT Id, Nombre, Apellido
-	from Personas;
-
--- se declaran las variables que almacenaran cada iteracion del cursor
-declare @Id int, @Nombre varchar(20), @Apellido varchar(20)
- 
---abrir cursor
-OPEN borrarDuplicadosCursor
-
--- primera iteracion, guardo la primer fila en las variables
-fetch borrarDuplicadosCursor into @Id, @Nombre, @Apellido;
-
-While (@@FETCH_STATUS=0) --mientras haya filas por leer en la tabla de #Personas
-	begin
-		if (select nro_fila from #Personas where Id = @Id) = 1
-			begin 
-				delete from Personas
-				where 
-			end
-		
-
-		-- busca la fila siguiente
-		fetch borrarDuplicadosCursor into @Id, @Nombre, @Apellido;
-	end
-
---cerrar y liberar cursor
-close borrarDuplicadosCursor
-DEALLOCATE borrarDuplicadosCursor
 
 -- Ejercicio 3
--- totales comprados por todos los clientes en cada provincia de los fabricantes
-
 select fab.provincia_cod, coalesce(sum(det.cantidad * det.precio_unit), 0) as total_comprado
 from fabricantes fab
 	left join productos prod
@@ -108,8 +60,8 @@ group by fab.provincia_cod
 order by fab.provincia_cod
 
 
--- ejercicio 4
 
+-- ejercicio 4
 create table numeros_secuenciales(
 	numero int null
 )
@@ -128,27 +80,34 @@ from numeros_secuenciales
 where numero + 1 not in (select numero from numeros_secuenciales)
 
 
--- ejercicio 5
 
-select prod.producto_cod,
-    sum(case when month(fact.fecha_emision) = 1 then det.precio_unit * det.cantidad else 0 end) as '1',
-    sum(case when month(fact.fecha_emision) = 2 then det.precio_unit * det.cantidad else 0 end) as '2',
-    sum(case when month(fact.fecha_emision) = 3 then det.precio_unit * det.cantidad else 0 end) as '3',
-    sum(case when month(fact.fecha_emision) = 4 then det.precio_unit * det.cantidad else 0 end) as '4',
-    sum(case when month(fact.fecha_emision) = 5 then det.precio_unit * det.cantidad else 0 end) as '5',
-    sum(case when month(fact.fecha_emision) = 6 then det.precio_unit * det.cantidad else 0 end) as '6',
-    sum(case when month(fact.fecha_emision) = 7 then det.precio_unit * det.cantidad else 0 end) as '7',
-    sum(case when month(fact.fecha_emision) = 8 then det.precio_unit * det.cantidad else 0 end) as '8',
-    sum(case when month(fact.fecha_emision) = 9 then det.precio_unit * det.cantidad else 0 end) as '9',
-    sum(case when month(fact.fecha_emision) = 10 then det.precio_unit * det.cantidad else 0 end) as '10',
-    sum(case when month(fact.fecha_emision) = 11 then det.precio_unit * det.cantidad else 0 end) as '11',
-    sum(case when month(fact.fecha_emision) = 12 then det.precio_unit * det.cantidad else 0 end) as '12'
-from productos prod
-	left join facturas_det det
-		on prod.producto_cod = det.producto_cod
+-- ejercicio 5
+select det.producto_cod,
+    sum(case when month(fact.fecha_emision) = 1 then det.cantidad else 0 end) as '1',
+    sum(case when month(fact.fecha_emision) = 2 then det.cantidad else 0 end) as '2',
+    sum(case when month(fact.fecha_emision) = 3 then det.cantidad else 0 end) as '3',
+    sum(case when month(fact.fecha_emision) = 4 then det.cantidad else 0 end) as '4',
+    sum(case when month(fact.fecha_emision) = 5 then det.cantidad else 0 end) as '5',
+    sum(case when month(fact.fecha_emision) = 6 then det.cantidad else 0 end) as '6',
+    sum(case when month(fact.fecha_emision) = 7 then det.cantidad else 0 end) as '7',
+    sum(case when month(fact.fecha_emision) = 8 then det.cantidad else 0 end) as '8',
+    sum(case when month(fact.fecha_emision) = 9 then  det.cantidad else 0 end) as '9',
+    sum(case when month(fact.fecha_emision) = 10 then det.cantidad else 0 end) as '10',
+    sum(case when month(fact.fecha_emision) = 11 then det.cantidad else 0 end) as '11',
+    sum(case when month(fact.fecha_emision) = 12 then det.cantidad else 0 end) as '12'
+from facturas_det det
 	left join facturas fact
 		on det.factura_num = fact.factura_num 
-group by prod.producto_cod
+group by det.producto_cod
+
+
+
+
+-- ejercicio 6
+
+
+
+
 
 -- ejercicio 7
 select c1.cliente_num,
@@ -163,4 +122,39 @@ from clientes c1
 where c1.cliente_ref is not null
 
 
+
+
+
 -- ejercicio 8
+create table tabla1(
+	columna1 int,
+	columna2 int,
+	columna3 int,
+)
+
+create table tabla2(
+	columna1 int,
+	columna2 int,
+	columna3 int,
+)
+
+insert tabla1 (columna1, columna2, columna3) values (1,2,3)
+insert tabla1 (columna1, columna2, columna3) values (1,2,3)
+insert tabla1 (columna1, columna2, columna3) values (1,2,3)
+
+insert tabla2 (columna1, columna2, columna3) values (1,2,3)
+insert tabla1 (columna1, columna2, columna3) values (1,2,3)
+insert tabla1 (columna1, columna2, columna3) values (1,2,3)
+
+delete from tabla1
+delete from tabla2
+
+select * from tabla1
+except
+select * from tabla2
+
+union all
+
+select * from tabla2
+except
+select * from tabla1
