@@ -77,6 +77,8 @@ select coalesce(min(numero + 1), 1) as primer_espacio_libre
 from numeros_secuenciales
 where numero + 1 not in (select numero from numeros_secuenciales)
 
+select * from numeros_secuenciales
+delete from numeros_secuenciales
 
 
 -- ejercicio 5
@@ -210,16 +212,21 @@ insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fe
 				values( 100,       1,      'kate', 'cejas', 12345,'2024-01-01','2024-12-31')
 
 select * from clubes
-select * from jugadoras
+select * from jugadoras 
+
 delete from jugadoras
 
 drop table jugadoras
+drop table clubes
 
 -- insert para probar el trigger
 
 --este insert deberia fallar
 insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
 				values( 100,       2,      'kate', 'cejas', 12345,'2024-09-03','2024-12-31')
+
+insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
+				values( 100,       2,      'kate', 'cejas', 12345,'2023-01-01','2026-12-31')
 
 --estos insert ejecutan bien
 insert into jugadoras (legajo, codigoClub, nombre, apellido, dni, fechaDesde, fechaHasta)
@@ -247,19 +254,21 @@ begin
 			declare @legajo int, @codigoClub int, @nombre varchar(30), @apellido varchar(30), @dni int, @fechaDesde date, @fechaHasta date
  
 			--abrir cursor
-			OPEN cursorJugadoras
+			open cursorJugadoras
 
 			-- primera iteracion, guardo la primer fila en las variables
 			fetch cursorJugadoras into @legajo, @codigoClub, @nombre, @apellido, @dni, @fechaDesde, @fechaHasta
 
-			While (@@FETCH_STATUS=0) --mientras haya filas por leer de la misma jugadora
+			while (@@FETCH_STATUS=0) --mientras haya filas por leer de la misma jugadora
 				begin
 					-- validar que las fechas Desde y Hasta no esté ninguna de las dos dentro del periodo en la jugadora ya existente
 					if
 						((select fechaDesde from inserted) between @fechaDesde and @fechaHasta)
 							or 
 						((select fechaHasta from inserted) between @fechaDesde and @fechaHasta)
-				
+							or
+						((select fechaDesde from inserted) < @fechaDesde and (select fechaHasta from inserted) > @fechaHasta)
+
 						begin -- en caso de que los periodos no sean validos, se lanza error
 							print 'Nro. Error: ' + cast(error_number() as varchar);
 							print 'mensaje: ' + error_message();
@@ -272,7 +281,7 @@ begin
 
 			--cerrar y liberar cursor
 			close cursorJugadoras
-			DEALLOCATE cursorJugadoras
+			deallocate cursorJugadoras
 		end 
 
 	-- en caso de no existir la jugadora, o que los periodos sean válidos, inserto en la tabla

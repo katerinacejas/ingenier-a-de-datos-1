@@ -91,6 +91,8 @@ create trigger insertar_en_view_trigger
 		DEALLOCATE curIns
 	end
 
+go
+
 -- EJERCICIO 4
 create trigger cambio_precio_trigger
 	on productos
